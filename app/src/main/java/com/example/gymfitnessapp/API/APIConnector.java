@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class APIConnector {
     private static final String API_HOST = "exercisedb.p.rapidapi.com";
-    private static final String API_KEY = "5cb82f89d3mshd7540a87e7a1e58p1bc785jsne4b7843ecd18";
+    private static final String API_KEY = "KEY";
 
     private static final String url = "https://exercisedb.p.rapidapi.com/exercises";
     private OkHttpClient client;
