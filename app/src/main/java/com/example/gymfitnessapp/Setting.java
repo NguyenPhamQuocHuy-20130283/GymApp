@@ -35,13 +35,13 @@ public class Setting extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
 
-        btnSave = (FButton)findViewById(R.id.btnSave);
-        radioGroup = (RadioGroup)findViewById(R.id.ready);
-        rdyEasy = (RadioButton)findViewById(R.id.rdyEasy);
+        btnSave = findViewById(R.id.btnSave);
+        radioGroup = findViewById(R.id.ready);
+        rdyEasy = findViewById(R.id.rdyEasy);
         rdyMedium = (RadioButton)findViewById(R.id.rdyMedium);
         rdyHard = (RadioButton)findViewById(R.id.rdyHard);
-        switchAlarm = (ToggleButton)findViewById(R.id.switchAlarm);
-        timePicker = (TimePicker)findViewById(R.id.timePicker);
+        switchAlarm = findViewById(R.id.switchAlarm);
+        timePicker = findViewById(R.id.timePicker);
 
         gymDB = new GymDB(this);
 

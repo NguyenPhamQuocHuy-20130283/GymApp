@@ -3,6 +3,7 @@ package com.example.gymfitnessapp;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
+import com.example.gymfitnessapp.Custom.TodayDecorator;
 import com.example.gymfitnessapp.Custom.WorkoutDoneDecorator;
 import com.example.gymfitnessapp.Database.GymDB;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
@@ -26,11 +27,12 @@ public class Calendar extends AppCompatActivity {
 
         gymDB = new GymDB(this);
 
-        materialCalendarView = (MaterialCalendarView)findViewById(R.id.calendar);
+        materialCalendarView = findViewById(R.id.calendar);
         List<String> workoutDay = gymDB.getWorkoutDays();
         HashSet<CalendarDay> convertedList = new HashSet<>();
-        for (String value:workoutDay)
+        for (String value : workoutDay)
             convertedList.add(CalendarDay.from(new Date(Long.parseLong(value))));
         materialCalendarView.addDecorator(new WorkoutDoneDecorator(convertedList));
+        materialCalendarView.addDecorator(new TodayDecorator()); // Add this line to highlight today's date
     }
 }
