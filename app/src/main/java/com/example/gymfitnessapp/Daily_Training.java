@@ -4,18 +4,16 @@ import android.os.CountDownTimer;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.AutoCompleteTextView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.example.gymfitnessapp.Database.ExerciseApiService;
 import com.example.gymfitnessapp.Database.GymDB;
 import com.example.gymfitnessapp.Model.Exercise;
 import com.example.gymfitnessapp.Utils.Common;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -45,7 +43,6 @@ public class Daily_Training extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_daily__training);
 
-        initData();
         btnStart = (FButton)findViewById(R.id.btnStartViewExercise);
         detail_gif = (GifImageView)findViewById(R.id.detail_image);
         txtCountDown = (TextView)findViewById(R.id.txtCountDown);
@@ -146,7 +143,8 @@ public class Daily_Training extends AppCompatActivity {
                 countDownTimerForHardMode.start();
 
             //set picture and name
-            detail_gif.setImageResource(list.get(ex_id).getGifUrl());
+            //temp fix
+            detail_gif.setImageResource(Integer.parseInt(list.get(ex_id).getGifUrl()));
             title.setText(list.get(ex_id).getName());
             title.setVisibility(View.VISIBLE);
             btnStart.setText("done");
@@ -286,7 +284,8 @@ public class Daily_Training extends AppCompatActivity {
 
     private void setExerciseInformation(int id) {
         title.setText(list.get(id).getName());
-        detail_gif.setImageResource(list.get(id).getGifUrl());
+        //temp fix
+        detail_gif.setImageResource(Integer.parseInt(list.get(id).getGifUrl()));
         btnStart.setText("start");
 
         detail_gif.setVisibility(View.VISIBLE);
@@ -296,30 +295,5 @@ public class Daily_Training extends AppCompatActivity {
         linearLayout.setVisibility(View.INVISIBLE);
     }
 
-    private void initData() {
 
-        String json = ExerciseApiService.getExercises("waist");
-
-        try {
-            // Chuyển đổi JSON thành đối tượng JSONObject
-            JSONObject exerciseJson = new JSONObject(json);
-
-            // Lấy thông tin từ JSONObject
-            String id = exerciseJson.getString("id");
-            String name = exerciseJson.getString("name");
-            String bodyPart = exerciseJson.getString("bodyPart");
-            String equipment = exerciseJson.getString("equipment");
-            String gifUrl = exerciseJson.getString("gifUrl");
-            String target = exerciseJson.getString("target");
-
-            // Tạo đối tượng Exercise
-            Exercise exercise = new Exercise(id, name, bodyPart, equipment, gifUrl, target);
-
-            // Thêm đối tượng Exercise vào danh sách
-            list.add(exercise);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
 }
