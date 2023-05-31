@@ -68,32 +68,7 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        apiConnector = new APIConnector();
-
-        fetchDataFromAPI();
     }
 
-    private void fetchDataFromAPI() {
-        Callback callback = new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                Log.e(MainActivity.class.getSimpleName(), "Request failed: " + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseBody = response.body().string();
-                    // Xử lý dữ liệu phản hồi ở đây
-
-                    Log.d(MainActivity.class.getSimpleName(), "Response: " + responseBody);
-                } else {
-                    Log.e(MainActivity.class.getSimpleName(), "Request unsuccessful: " + response.code());
-                }
-            }
-        };
-
-        apiConnector.fetchData(callback, "body weight");
-    }
 }
 

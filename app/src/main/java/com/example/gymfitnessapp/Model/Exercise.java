@@ -1,7 +1,7 @@
 package com.example.gymfitnessapp.Model;
 
 public class Exercise {
-    private String id;
+    private int id;
     private String name;
     private String bodyPart;
     private String equipment;
@@ -12,7 +12,7 @@ public class Exercise {
         // Empty constructor required for Firebase
     }
 
-    public Exercise(String id, String name, String bodyPart, String equipment, String gifUrl, String target) {
+    public Exercise(int id, String name, String bodyPart, String equipment, String gifUrl, String target) {
         this.id = id;
         this.name = name;
         this.bodyPart = bodyPart;
@@ -21,11 +21,11 @@ public class Exercise {
         this.target = target;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
