@@ -11,6 +11,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.example.gymfitnessapp.API.APIConnector;
+import com.example.gymfitnessapp.Custom.MyDialogFragment;
 import com.example.gymfitnessapp.Custom.TodayDecorator;
 import com.example.gymfitnessapp.Custom.WorkoutDoneDecorator;
 import com.example.gymfitnessapp.Database.GymDB;
@@ -21,6 +22,7 @@ import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,7 +53,7 @@ public class Calendar extends AppCompatActivity {
         List<String> workoutDay = gymDB.getWorkoutDays();
         HashSet<CalendarDay> convertedList = new HashSet<>();
         for (String value : workoutDay)
-            convertedList.add(CalendarDay.from(new Date(Long.parseLong(value))));
+            convertedList.add(CalendarDay.from((parseDate(value))));
         materialCalendarView.addDecorator(new WorkoutDoneDecorator(convertedList));
         materialCalendarView.addDecorator(new TodayDecorator(this)); // Add this line to highlight today's date
 
@@ -63,42 +65,74 @@ public class Calendar extends AppCompatActivity {
 
         materialCalendarView.setOnDateChangedListener((widget, date, selected) -> {
             CalendarDay currentDay = CalendarDay.today();
-            if(date.getCalendar().after(currentDay)){
-                // Selected date is valid
+            if(date.getCalendar().after(currentDay.getCalendar())|| date.getCalendar().equals(currentDay.getCalendar())){
+              // Retrieve the selected date from the calendar
                 String selectedDate = formatDate(date.getCalendar().getTime());
 
-                // Retrieve the selected body part from the spinner
+             // Retrieve the selected body part from the spinner
                 String selectedBodyPart = spinner.getSelectedItem().toString();
-                // Show a dialog to confirm setting or deleting the workout schedule
-                showDialog(selectedDate, selectedBodyPart);
+                if(selected){
+                    showSaveDateDialog(selectedDate, selectedBodyPart);
+                   
+                }
+
+            }
+            if(date.getCalendar().before(currentDay.getCalendar())) {
+                Toast.makeText(this, "You can't set a workout schedule for a previous date", Toast.LENGTH_SHORT).show();
             }
 
         });
     }
-    private void showDialog(String selectedDate, String selectedBodyPart){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Workout Schedule")
-                .setMessage("Do you want to set a workout schedule for " + selectedDate + " with body part " + selectedBodyPart + "?")
-                .setPositiveButton("Set", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // Handle setting the workout schedule
-                        // You can perform the necessary actions here, such as saving the schedule to a database
-                        gymDB.saveSelectedDate(selectedDate, selectedBodyPart);
-                        Toast.makeText(Calendar.this, "Workout schedule set for " + selectedDate, Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Delete", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // Handle deleting the workout schedule
-                        // You can perform the necessary actions here, such as removing the schedule from the database
-                        gymDB.deleteSelectedDate(selectedDate);
-                        Toast.makeText(Calendar.this, "Workout schedule deleted for " + selectedDate, Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setCancelable(true)
-                .show();
+
+//    private void showDeleteDateDialog(CalendarDay date) {
+//        MyDialogFragment dialogFragment = MyDialogFragment.newInstance("Delete Date", "Do you want to delete the workout for this date?");
+//        dialogFragment.setOnDialogButtonClickListener(new MyDialogFragment.OnDialogButtonClickListener() {
+//            @Override
+//            public void onPositiveButtonClick() {
+//                // Handle positive button click (delete workout for the date)
+//                gymDB.deleteSelectedDate(formatDate(date.getDate()));
+//                Toast.makeText(Calendar.this, "Workout deleted for " + date, Toast.LENGTH_SHORT).show();
+//            }
+//
+//            @Override
+//            public void onNegativeButtonClick() {
+//                // Handle negative button click (cancel)
+//                Toast.makeText(Calendar.this, "Cancelled", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+//        dialogFragment.show(getSupportFragmentManager(), "DeleteDateDialog");
+//    }
+
+
+    private void showSaveDateDialog(String selectedDate, String selectedBodyPart) {
+        MyDialogFragment dialogFragment = MyDialogFragment.newInstance("Set Date", "Do you want to set a workout for this date?");
+        dialogFragment.setOnDialogButtonClickListener(new MyDialogFragment.OnDialogButtonClickListener() {
+            @Override
+            public void onPositiveButtonClick() {
+                // Handle positive button click (set workout for the date)
+               // Get the selected body part from the spinner
+                gymDB.saveSelectedDate(selectedDate, selectedBodyPart);
+                Toast.makeText(Calendar.this, "Workout set for " + selectedDate+" body part ["+selectedBodyPart+"]", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNegativeButtonClick() {
+                // Handle negative button click (cancel)
+                Toast.makeText(Calendar.this, "Cancelled", Toast.LENGTH_SHORT).show();
+                dialogFragment.onCancel(dialogFragment.getDialog());
+            }
+        });
+        dialogFragment.show(getSupportFragmentManager(), "SetDateDialog");
+    }
+
+    private Date parseDate(String dateString) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        try {
+            return sdf.parse(dateString);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private String formatDate(Date date) {

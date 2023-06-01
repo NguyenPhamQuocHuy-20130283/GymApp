@@ -5,7 +5,9 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
+import android.util.Log;
 
 import com.readystatesoftware.sqliteasset.SQLiteAssetHelper;
 
@@ -14,13 +16,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class GymDB extends SQLiteAssetHelper {
+public class GymDB extends SQLiteOpenHelper {
 
-    private static final String DB_NAME = "gym.db";
+    private static final String DB_NAME = "gym_database.db";
     private static final int DB_VERSION = 1;
 
     public GymDB(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
+    }
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        // Create the "Setting" table
+        String createSettingTable = "CREATE TABLE IF NOT EXISTS Setting (" +
+                "Mode INTEGER NOT NULL UNIQUE," +
+                "PRIMARY KEY(Mode)" +
+                ")";
+        db.execSQL(createSettingTable);
+
+        // Create the "WorkoutDays" table
+        String createWorkoutDaysTable = "CREATE TABLE IF NOT EXISTS WorkoutDays (" +
+                "ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "Day TEXT," +
+                "BodyPart TEXT" +
+                ")";
+        db.execSQL(createWorkoutDaysTable);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Drop older tables if exist
+        db.execSQL("DROP TABLE IF EXISTS Setting");
+        db.execSQL("DROP TABLE IF EXISTS WorkoutDays");
+
+        // Create tables again
+        onCreate(db);
     }
 
     @SuppressLint("Range")
@@ -71,20 +100,31 @@ public class GymDB extends SQLiteAssetHelper {
 
     public void saveDay(String value){
 
-        SQLiteDatabase sqLiteDatabase = getReadableDatabase();
+        SQLiteDatabase sqLiteDatabase = getWritableDatabase();
         String query = String.format("INSERT INTO WorkoutDays(Day) VALUES('%s');",value);
         sqLiteDatabase.execSQL(query);
     }
     public void saveSelectedDate(String selectedDate, String selectedBodyPart) {
         SQLiteDatabase db = getWritableDatabase();
+        if (db == null) {
+            Log.e("GymDB", "Failed to open database");
+            return;
+        }
 
         ContentValues values = new ContentValues();
         values.put("Day", selectedDate);
         values.put("BodyPart", selectedBodyPart);
 
-        db.insert("WorkoutDays", null, values);
+        long result = db.insert("WorkoutDays", null, values);
         db.close();
+
+        if (result == -1) {
+            Log.e("GymDB", "Failed to save workout day");
+        } else {
+            Log.d("GymDB", "Workout day saved successfully");
+        }
     }
+
     public void deleteSelectedDate(String selectedDate) {
         SQLiteDatabase db = getWritableDatabase();
         String whereClause = "Day = ?";
@@ -93,6 +133,7 @@ public class GymDB extends SQLiteAssetHelper {
         db.delete("WorkoutDays", whereClause, whereArgs);
         db.close();
     }
+
 //    @SuppressLint("Range")
 //    public HashSet<CalendarDay> getWorkoutDays() {
 //        SQLiteDatabase sqLiteDatabase = getReadableDatabase();
