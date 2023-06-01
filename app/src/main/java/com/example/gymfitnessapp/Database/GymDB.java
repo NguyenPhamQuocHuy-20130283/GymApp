@@ -74,6 +74,18 @@ public class GymDB extends SQLiteOpenHelper {
         String query = "UPDATE Setting SET Mode = " + value;
         sqLiteDatabase.execSQL(query);
     }
+    public boolean isDateSaved(String selectedDate) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM WorkoutDays WHERE Day = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{selectedDate});
+
+        boolean isSaved = cursor.getCount() > 0;
+
+        cursor.close();
+        db.close();
+
+        return isSaved;
+    }
 
     @SuppressLint("Range")
     public List<String> getWorkoutDays(){

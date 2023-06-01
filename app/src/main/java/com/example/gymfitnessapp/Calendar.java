@@ -1,9 +1,7 @@
 package com.example.gymfitnessapp;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ArrayAdapter;
@@ -13,7 +11,7 @@ import android.widget.Toast;
 import com.example.gymfitnessapp.API.APIConnector;
 import com.example.gymfitnessapp.Custom.MyDialogFragment;
 import com.example.gymfitnessapp.Custom.TodayDecorator;
-import com.example.gymfitnessapp.Custom.WorkoutDoneDecorator;
+import com.example.gymfitnessapp.Custom.WorkoutSavedDecorator;
 import com.example.gymfitnessapp.Database.GymDB;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -25,6 +23,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -50,12 +49,16 @@ public class Calendar extends AppCompatActivity {
         gymDB = new GymDB(this);
 
         materialCalendarView = findViewById(R.id.calendar);
-        List<String> workoutDay = gymDB.getWorkoutDays();
+        List<String> workoutDays = gymDB.getWorkoutDays();
+        // Convert the workout days to CalendarDay objects
         HashSet<CalendarDay> convertedList = new HashSet<>();
-        for (String value : workoutDay)
-            convertedList.add(CalendarDay.from((parseDate(value))));
-        materialCalendarView.addDecorator(new WorkoutDoneDecorator(convertedList));
-        materialCalendarView.addDecorator(new TodayDecorator(this)); // Add this line to highlight today's date
+        for (String value : workoutDays) {
+            convertedList.add(CalendarDay.from(parseDate(value)));
+        }
+
+        // Add the decorators to the calendar
+        materialCalendarView.addDecorator(new WorkoutSavedDecorator(convertedList));
+        materialCalendarView.addDecorator(new TodayDecorator(Calendar.this));
 
         Spinner spinner = findViewById(R.id.bodyPartSpinner);
         calendarAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, bodyParts);
@@ -71,9 +74,13 @@ public class Calendar extends AppCompatActivity {
 
              // Retrieve the selected body part from the spinner
                 String selectedBodyPart = spinner.getSelectedItem().toString();
+                boolean isDateSaved = gymDB.isDateSaved(selectedDate);
                 if(selected){
-                    showSaveDateDialog(selectedDate, selectedBodyPart);
-                   
+                    if(isDateSaved){
+                        showDeleteDateDialog(date);}
+                    else {
+                        showSaveDateDialog(selectedDate, selectedBodyPart);
+                    }
                 }
 
             }
@@ -84,24 +91,39 @@ public class Calendar extends AppCompatActivity {
         });
     }
 
-//    private void showDeleteDateDialog(CalendarDay date) {
-//        MyDialogFragment dialogFragment = MyDialogFragment.newInstance("Delete Date", "Do you want to delete the workout for this date?");
-//        dialogFragment.setOnDialogButtonClickListener(new MyDialogFragment.OnDialogButtonClickListener() {
-//            @Override
-//            public void onPositiveButtonClick() {
-//                // Handle positive button click (delete workout for the date)
-//                gymDB.deleteSelectedDate(formatDate(date.getDate()));
-//                Toast.makeText(Calendar.this, "Workout deleted for " + date, Toast.LENGTH_SHORT).show();
-//            }
-//
-//            @Override
-//            public void onNegativeButtonClick() {
-//                // Handle negative button click (cancel)
-//                Toast.makeText(Calendar.this, "Cancelled", Toast.LENGTH_SHORT).show();
-//            }
-//        });
-//        dialogFragment.show(getSupportFragmentManager(), "DeleteDateDialog");
-//    }
+    private void showDeleteDateDialog(CalendarDay date) {
+        MyDialogFragment dialogFragment = MyDialogFragment.newInstance("Delete Date", "Do you want to delete the workout for this date?");
+        dialogFragment.setOnDialogButtonClickListener(new MyDialogFragment.OnDialogButtonClickListener() {
+            @Override
+            public void onPositiveButtonClick() {
+                // Handle positive button click (delete workout for the date)
+                gymDB.deleteSelectedDate(formatDate(date.getDate()));
+                List<String> workoutDays = gymDB.getWorkoutDays();
+                workoutDays.remove(formatDate(date.getDate()));
+                // Clear the existing decorators
+                materialCalendarView.removeDecorators();
+
+                // Convert the workout days to CalendarDay objects
+                HashSet<CalendarDay> convertedList = new HashSet<>();
+                for (String value : workoutDays) {
+                    convertedList.add(CalendarDay.from(parseDate(value)));
+                }
+
+                // Add the decorators to the calendar
+                materialCalendarView.addDecorator(new WorkoutSavedDecorator(convertedList));
+                materialCalendarView.addDecorator(new TodayDecorator(Calendar.this));
+                //Toast message
+                Toast.makeText(Calendar.this, "Workout deleted for " + date, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNegativeButtonClick() {
+                // Handle negative button click (cancel)
+                Toast.makeText(Calendar.this, "Cancelled", Toast.LENGTH_SHORT).show();
+            }
+        });
+        dialogFragment.show(getSupportFragmentManager(), "DeleteDateDialog");
+    }
 
 
     private void showSaveDateDialog(String selectedDate, String selectedBodyPart) {
@@ -113,13 +135,26 @@ public class Calendar extends AppCompatActivity {
                // Get the selected body part from the spinner
                 gymDB.saveSelectedDate(selectedDate, selectedBodyPart);
                 Toast.makeText(Calendar.this, "Workout set for " + selectedDate+" body part ["+selectedBodyPart+"]", Toast.LENGTH_SHORT).show();
+                List<String> workoutDays = gymDB.getWorkoutDays();
+
+                // Clear the existing decorators
+                materialCalendarView.removeDecorators();
+
+                // Convert the workout days to CalendarDay objects
+                HashSet<CalendarDay> convertedList = new HashSet<>();
+                for (String value : workoutDays) {
+                    convertedList.add(CalendarDay.from(parseDate(value)));
+                }
+
+                // Add the decorators to the calendar
+                materialCalendarView.addDecorator(new WorkoutSavedDecorator(convertedList));
+                materialCalendarView.addDecorator(new TodayDecorator(Calendar.this));
             }
 
             @Override
             public void onNegativeButtonClick() {
                 // Handle negative button click (cancel)
                 Toast.makeText(Calendar.this, "Cancelled", Toast.LENGTH_SHORT).show();
-                dialogFragment.onCancel(dialogFragment.getDialog());
             }
         });
         dialogFragment.show(getSupportFragmentManager(), "SetDateDialog");
