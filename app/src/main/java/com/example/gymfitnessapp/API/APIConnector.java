@@ -41,10 +41,11 @@ public class APIConnector {
         Call call = client.newCall(request);
         call.enqueue(callback);
     }
-    public void fetchEquipmentListData(Callback callback) {
+
+    public void fetchTargetListData(Callback callback) {
 
         Request request = new Request.Builder()
-                .url(url+"/equipmentList")
+                .url(url+"/targetList")
                 .header("X-RapidAPI-Host", API_HOST)
                 .header("X-RapidAPI-Key", API_KEY)
                 .build();

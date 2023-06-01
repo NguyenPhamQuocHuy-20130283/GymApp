@@ -1,7 +1,9 @@
 package com.example.gymfitnessapp.Custom;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 
@@ -15,11 +17,11 @@ import com.prolificinteractive.materialcalendarview.CalendarDay;
 public class TodayDecorator implements DayViewDecorator {
 
     private final CalendarDay today;
-    private final Typeface typeface;
+    private final Context context;
 
-    public TodayDecorator() {
+    public TodayDecorator(Context context) {
         today = CalendarDay.today();
-        typeface = Typeface.defaultFromStyle(Typeface.BOLD);
+        this.context = context;
     }
 
     @Override
@@ -29,9 +31,8 @@ public class TodayDecorator implements DayViewDecorator {
 
     @Override
     public void decorate(DayViewFacade view) {
-        view.addSpan(typeface);
-        view.addSpan(new StyleSpan(Typeface.BOLD));
-        view.addSpan(new ForegroundColorSpan(Color.BLUE));
+        int highlightColor = ContextCompat.getColor(context, R.color.yellow); // Change the color to your desired color resource
+        view.setBackgroundDrawable(new ColorDrawable(highlightColor));
     }
 }
 
