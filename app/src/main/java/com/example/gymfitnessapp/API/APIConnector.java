@@ -20,9 +20,8 @@ public class APIConnector {
     }
 
     public void fetchEquipmentData(Callback callback, String equipment) {
-
         Request request = new Request.Builder()
-                .url(url+"/equipment/"+equipment)
+                .url(url + "/equipment/" + equipment)
                 .header("X-RapidAPI-Host", API_HOST)
                 .header("X-RapidAPI-Key", API_KEY)
                 .build();
@@ -30,10 +29,10 @@ public class APIConnector {
         Call call = client.newCall(request);
         call.enqueue(callback);
     }
-    public void fetchBodyPartListData(Callback callback) {
 
+    public void fetchBodyPartListData(Callback callback) {
         Request request = new Request.Builder()
-                .url(url+"/bodyPartList")
+                .url(url + "/bodyPartList")
                 .header("X-RapidAPI-Host", API_HOST)
                 .header("X-RapidAPI-Key", API_KEY)
                 .build();
@@ -43,9 +42,8 @@ public class APIConnector {
     }
 
     public void fetchTargetListData(Callback callback) {
-
         Request request = new Request.Builder()
-                .url(url+"/targetList")
+                .url(url + "/targetList")
                 .header("X-RapidAPI-Host", API_HOST)
                 .header("X-RapidAPI-Key", API_KEY)
                 .build();
@@ -53,6 +51,4 @@ public class APIConnector {
         Call call = client.newCall(request);
         call.enqueue(callback);
     }
-
 }
-

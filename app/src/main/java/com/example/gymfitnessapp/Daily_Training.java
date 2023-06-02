@@ -3,25 +3,35 @@ package com.example.gymfitnessapp;
 import android.os.CountDownTimer;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.example.gymfitnessapp.API.APIConnector;
 import com.example.gymfitnessapp.Database.GymDB;
 import com.example.gymfitnessapp.Model.Exercise;
 import com.example.gymfitnessapp.Utils.Common;
+import com.prolificinteractive.materialcalendarview.CalendarDay;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import info.hoang8f.widget.FButton;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 import pl.droidsonroids.gif.GifImageView;
 
 public class Daily_Training extends AppCompatActivity {
@@ -30,12 +40,14 @@ public class Daily_Training extends AppCompatActivity {
     GifImageView detail_gif;
     TextView txtGetReady, txtCountDown, txtTimer, title;
     ProgressBar progressBar;
+    APIConnector apiConnector;
     LinearLayout linearLayout;
+    CalendarDay currentDay;
     private String selectedGroup;
     Spinner groupSpinner;
     int ex_id = 0;
     List<Exercise> list = new ArrayList<>();
-
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     GymDB gymDB;
 
     @Override
@@ -55,6 +67,11 @@ public class Daily_Training extends AppCompatActivity {
         gymDB = new GymDB(this);
 
         //set data
+        String date = formatDate(currentDay.today().getDate());
+        String workoutSaved = gymDB.getWorkoutSaved(date);
+
+        fetchDataFromAPI(workoutSaved);
+
         progressBar.setMax(list.size());
         setExerciseInformation(ex_id);
         detail_gif.setVisibility(View.INVISIBLE);
@@ -294,6 +311,49 @@ public class Daily_Training extends AppCompatActivity {
 
         linearLayout.setVisibility(View.INVISIBLE);
     }
+    private String formatDate(Date date) {
+        return dateFormat.format(date);
+    }
+    private void fetchDataFromAPI(String workout) {
+        Callback callback = new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(MainActivity.class.getSimpleName(), "Request failed: " + e.getMessage());
+            }
 
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseBody = response.body().string();
+                    // Xử lý dữ liệu phản hồi ở đây
+                    try {
+                        JSONArray jsonArray = new JSONArray(responseBody);
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+                            if(workout.equalsIgnoreCase(jsonObject.getString("bodyPart"))) {
+                                Exercise exercise = new Exercise();
+                                exercise.setId(jsonObject.getInt("id"));
+                                exercise.setName(jsonObject.getString("name"));
+                                exercise.setEquipment(jsonObject.getString("equipment"));
+                                exercise.setBodyPart(jsonObject.getString("bodyPart"));
+                                exercise.setGifUrl(jsonObject.getString("gifUrl"));
+                                exercise.setTarget(jsonObject.getString("target"));
+                                list.add(exercise);
+                            }
+                        }
+
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    Log.d(this.getClass().getSimpleName(), "Response: " + responseBody);
+                } else {
+                    Log.e(this.getClass().getSimpleName(), "Request unsuccessful: " + response.code());
+                }
+            }
+        };
+
+        apiConnector.fetchEquipmentData(callback, "body weight");
+    }
 
 }

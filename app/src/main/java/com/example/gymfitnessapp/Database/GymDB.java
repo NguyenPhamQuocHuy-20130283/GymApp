@@ -86,7 +86,23 @@ public class GymDB extends SQLiteOpenHelper {
 
         return isSaved;
     }
+    @SuppressLint("Range")
+    public String getWorkoutSaved(String selectedDate) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM WorkoutDays WHERE Day = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{selectedDate});
 
+        String workout = "";
+
+        if (cursor.moveToFirst()) {
+            workout = cursor.getString(cursor.getColumnIndex("BodyPart"));
+        }
+
+        cursor.close();
+        db.close();
+
+        return (workout==""||workout==null)?"back":workout;
+    }
     @SuppressLint("Range")
     public List<String> getWorkoutDays(){
 
@@ -146,6 +162,27 @@ public class GymDB extends SQLiteOpenHelper {
         db.close();
     }
 
+    @SuppressLint("Range")
+    public String getBodyPartForDate(String selectedDate) {
+        SQLiteDatabase db = getReadableDatabase();
+        String[] projection = {"BodyPart"};
+        String selection = "Day = ?";
+        String[] selectionArgs = {selectedDate};
+
+        Cursor cursor = db.query("WorkoutDays", projection, selection, selectionArgs, null, null, null);
+        String bodyPart = null;
+
+        if (cursor.moveToFirst()) {
+            bodyPart = cursor.getString(cursor.getColumnIndex("BodyPart"));
+        }
+
+        cursor.close();
+        db.close();
+
+        return bodyPart;
+    }
+
+
 //    @SuppressLint("Range")
 //    public HashSet<CalendarDay> getWorkoutDays() {
 //        SQLiteDatabase sqLiteDatabase = getReadableDatabase();
@@ -169,6 +206,7 @@ public class GymDB extends SQLiteOpenHelper {
 //        cursor.close();
 //        return result;
 //    }
+
 
 
 }

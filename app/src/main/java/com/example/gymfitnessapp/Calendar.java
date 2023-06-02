@@ -13,11 +13,11 @@ import com.example.gymfitnessapp.Custom.MyDialogFragment;
 import com.example.gymfitnessapp.Custom.TodayDecorator;
 import com.example.gymfitnessapp.Custom.WorkoutSavedDecorator;
 import com.example.gymfitnessapp.Database.GymDB;
+import com.example.gymfitnessapp.Model.Exercise;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
-
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -34,12 +34,13 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 public class Calendar extends AppCompatActivity {
-    APIConnector apiConnector;
-    MaterialCalendarView materialCalendarView;
-    HashSet<CalendarDay> list = new HashSet<>();
-    ArrayList<String> bodyParts = new ArrayList<>();
+    private APIConnector apiConnector;
+    private MaterialCalendarView materialCalendarView;
+    private HashSet<CalendarDay> savedWorkoutDays = new HashSet<>();
+    private ArrayList<String> bodyParts = new ArrayList<>();
     private ArrayAdapter<String> calendarAdapter;
-    GymDB gymDB;
+    private GymDB gymDB;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,13 +52,12 @@ public class Calendar extends AppCompatActivity {
         materialCalendarView = findViewById(R.id.calendar);
         List<String> workoutDays = gymDB.getWorkoutDays();
         // Convert the workout days to CalendarDay objects
-        HashSet<CalendarDay> convertedList = new HashSet<>();
         for (String value : workoutDays) {
-            convertedList.add(CalendarDay.from(parseDate(value)));
+            savedWorkoutDays.add(CalendarDay.from(parseDate(value)));
         }
 
         // Add the decorators to the calendar
-        materialCalendarView.addDecorator(new WorkoutSavedDecorator(convertedList));
+        materialCalendarView.addDecorator(new WorkoutSavedDecorator(savedWorkoutDays));
         materialCalendarView.addDecorator(new TodayDecorator(Calendar.this));
 
         Spinner spinner = findViewById(R.id.bodyPartSpinner);
@@ -68,26 +68,38 @@ public class Calendar extends AppCompatActivity {
 
         materialCalendarView.setOnDateChangedListener((widget, date, selected) -> {
             CalendarDay currentDay = CalendarDay.today();
-            if(date.getCalendar().after(currentDay.getCalendar())|| date.getCalendar().equals(currentDay.getCalendar())){
-              // Retrieve the selected date from the calendar
+            if (date.getCalendar().after(currentDay.getCalendar()) || date.getCalendar().equals(currentDay.getCalendar())) {
+                // Retrieve the selected date from the calendar
                 String selectedDate = formatDate(date.getCalendar().getTime());
 
-             // Retrieve the selected body part from the spinner
-                String selectedBodyPart = spinner.getSelectedItem().toString();
+                // Check if the selected date is saved in the database
                 boolean isDateSaved = gymDB.isDateSaved(selectedDate);
-                if(selected){
-                    if(isDateSaved){
-                        showDeleteDateDialog(date);}
-                    else {
+                if (isDateSaved) {
+                    // Retrieve the saved body part for the selected date
+                    String savedBodyPart = gymDB.getBodyPartForDate(selectedDate);
+
+                    // Retrieve the selected body part from the spinner
+                    String selectedBodyPart = spinner.getSelectedItem().toString();
+
+                    if (selectedBodyPart.equals(savedBodyPart)) {
+                        // If the selected body part matches the saved body part, proceed with saving the workout
+                        if (selected) {
+                            showDeleteDateDialog(date);
+                        }
+                    } else {
+                        // If the selected body part doesn't match the saved body part, show an error message
+                        Toast.makeText(this, "Selected body part doesn't match the saved body part", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // The selected date is not saved, proceed with saving the workout
+                    String selectedBodyPart = spinner.getSelectedItem().toString();
+                    if (selected) {
                         showSaveDateDialog(selectedDate, selectedBodyPart);
                     }
                 }
-
-            }
-            if(date.getCalendar().before(currentDay.getCalendar())) {
+            } else if (date.getCalendar().before(currentDay.getCalendar())) {
                 Toast.makeText(this, "You can't set a workout schedule for a previous date", Toast.LENGTH_SHORT).show();
             }
-
         });
     }
 
@@ -98,19 +110,12 @@ public class Calendar extends AppCompatActivity {
             public void onPositiveButtonClick() {
                 // Handle positive button click (delete workout for the date)
                 gymDB.deleteSelectedDate(formatDate(date.getDate()));
-                List<String> workoutDays = gymDB.getWorkoutDays();
-                workoutDays.remove(formatDate(date.getDate()));
+                savedWorkoutDays.remove(date);
                 // Clear the existing decorators
                 materialCalendarView.removeDecorators();
 
-                // Convert the workout days to CalendarDay objects
-                HashSet<CalendarDay> convertedList = new HashSet<>();
-                for (String value : workoutDays) {
-                    convertedList.add(CalendarDay.from(parseDate(value)));
-                }
-
                 // Add the decorators to the calendar
-                materialCalendarView.addDecorator(new WorkoutSavedDecorator(convertedList));
+                materialCalendarView.addDecorator(new WorkoutSavedDecorator(savedWorkoutDays));
                 materialCalendarView.addDecorator(new TodayDecorator(Calendar.this));
                 //Toast message
                 Toast.makeText(Calendar.this, "Workout deleted for " + date, Toast.LENGTH_SHORT).show();
@@ -125,29 +130,22 @@ public class Calendar extends AppCompatActivity {
         dialogFragment.show(getSupportFragmentManager(), "DeleteDateDialog");
     }
 
-
     private void showSaveDateDialog(String selectedDate, String selectedBodyPart) {
         MyDialogFragment dialogFragment = MyDialogFragment.newInstance("Set Date", "Do you want to set a workout for this date?");
         dialogFragment.setOnDialogButtonClickListener(new MyDialogFragment.OnDialogButtonClickListener() {
             @Override
             public void onPositiveButtonClick() {
                 // Handle positive button click (set workout for the date)
-               // Get the selected body part from the spinner
+                // Get the selected body part from the spinner
                 gymDB.saveSelectedDate(selectedDate, selectedBodyPart);
-                Toast.makeText(Calendar.this, "Workout set for " + selectedDate+" body part ["+selectedBodyPart+"]", Toast.LENGTH_SHORT).show();
-                List<String> workoutDays = gymDB.getWorkoutDays();
+                savedWorkoutDays.add(CalendarDay.from(parseDate(selectedDate)));
+                Toast.makeText(Calendar.this, "Workout set for " + selectedDate + " body part [" + selectedBodyPart + "]", Toast.LENGTH_SHORT).show();
 
                 // Clear the existing decorators
                 materialCalendarView.removeDecorators();
 
-                // Convert the workout days to CalendarDay objects
-                HashSet<CalendarDay> convertedList = new HashSet<>();
-                for (String value : workoutDays) {
-                    convertedList.add(CalendarDay.from(parseDate(value)));
-                }
-
                 // Add the decorators to the calendar
-                materialCalendarView.addDecorator(new WorkoutSavedDecorator(convertedList));
+                materialCalendarView.addDecorator(new WorkoutSavedDecorator(savedWorkoutDays));
                 materialCalendarView.addDecorator(new TodayDecorator(Calendar.this));
             }
 
@@ -161,9 +159,8 @@ public class Calendar extends AppCompatActivity {
     }
 
     private Date parseDate(String dateString) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         try {
-            return sdf.parse(dateString);
+            return dateFormat.parse(dateString);
         } catch (ParseException e) {
             e.printStackTrace();
             return null;
@@ -171,10 +168,8 @@ public class Calendar extends AppCompatActivity {
     }
 
     private String formatDate(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        return sdf.format(date);
+        return dateFormat.format(date);
     }
-
 
     private void fetchBodyPartsFromAPI() {
         Callback callback = new Callback() {
@@ -189,7 +184,8 @@ public class Calendar extends AppCompatActivity {
                     String responseBody = response.body().string();
                     // Xử lý dữ liệu phản hồi ở đây
                     Gson gson = new Gson();
-                    List<String> bodyPartsList = gson.fromJson(responseBody, new TypeToken<List<String>>() {}.getType());
+                    List<String> bodyPartsList = gson.fromJson(responseBody, new TypeToken<List<String>>() {
+                    }.getType());
 
                     // Add the body parts to the bodyParts list
                     bodyParts.addAll(bodyPartsList);
