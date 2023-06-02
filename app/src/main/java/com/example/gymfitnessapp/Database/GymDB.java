@@ -40,6 +40,8 @@ public class GymDB extends SQLiteOpenHelper {
                 "BodyPart TEXT" +
                 ")";
         db.execSQL(createWorkoutDaysTable);
+        String insertSetting = "INSERT INTO Setting VALUES (1)";
+        db.execSQL(insertSetting);
     }
 
     @Override
@@ -53,19 +55,17 @@ public class GymDB extends SQLiteOpenHelper {
     }
 
     @SuppressLint("Range")
-    public int getSettingMode(){
+    public int getSettingMode() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        int settingMode = 0;
 
-        SQLiteDatabase sqLiteDatabase = getReadableDatabase();
-        SQLiteQueryBuilder sqLiteQueryBuilder = new SQLiteQueryBuilder();
+        Cursor cursor = db.query("Setting", new String[]{"mode"}, null, null, null, null, null);
+        if (cursor.moveToFirst()) {
+            settingMode = cursor.getInt(cursor.getColumnIndex("mode"));
+        }
 
-        String[] sqlSelect = {"Mode"};
-        String sqlTable = "Setting";
-
-        sqLiteQueryBuilder.setTables(sqlTable);
-        Cursor cursor = sqLiteQueryBuilder.query(sqLiteDatabase, sqlSelect,
-                null, null, null, null, null);
-        cursor.moveToFirst();
-        return cursor.getInt(cursor.getColumnIndex("Mode"));
+        cursor.close();
+        return settingMode;
     }
 
     public void saveSettingMode(int value){

@@ -10,6 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.gymfitnessapp.API.APIConnector;
 import com.example.gymfitnessapp.Database.GymDB;
 import com.example.gymfitnessapp.Model.Exercise;
@@ -40,7 +41,7 @@ public class Daily_Training extends AppCompatActivity {
     GifImageView detail_gif;
     TextView txtGetReady, txtCountDown, txtTimer, title;
     ProgressBar progressBar;
-    APIConnector apiConnector;
+    private APIConnector apiConnector;
     LinearLayout linearLayout;
     CalendarDay currentDay;
     private String selectedGroup;
@@ -67,17 +68,18 @@ public class Daily_Training extends AppCompatActivity {
         gymDB = new GymDB(this);
 
         //set data
-        String date = formatDate(currentDay.today().getDate());
-        String workoutSaved = gymDB.getWorkoutSaved(date);
-
-        fetchDataFromAPI(workoutSaved);
 
         progressBar.setMax(list.size());
         setExerciseInformation(ex_id);
         detail_gif.setVisibility(View.INVISIBLE);
         title.setVisibility(View.INVISIBLE);
 
-
+        String date = formatDate(currentDay.today().getDate());
+        String workoutSaved = gymDB.getWorkoutSaved(date);
+        Log.d("WORKOUT SAVED", date);
+        apiConnector = new APIConnector();
+        fetchDataFromAPI(workoutSaved);
+        Log.d(this.getClass().getSimpleName(), "onCreate: " + list.size());
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -161,10 +163,24 @@ public class Daily_Training extends AppCompatActivity {
 
             //set picture and name
             //temp fix
-            detail_gif.setImageResource(Integer.parseInt(list.get(ex_id).getGifUrl()));
-            title.setText(list.get(ex_id).getName());
-            title.setVisibility(View.VISIBLE);
-            btnStart.setText("done");
+            if (!list.isEmpty()) {
+                // set picture and name
+                // temp fix
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // temp fix
+                        Glide.with(Daily_Training.this)
+                                .load(list.get(ex_id).getGifUrl())
+                                .into(detail_gif);
+                    }
+                });
+                title.setText(list.get(ex_id).getName());
+                title.setVisibility(View.VISIBLE);
+                btnStart.setText("done");
+            } else {
+                Log.e(this.getClass().getSimpleName(), "List is empty");
+            }
         }
         else
             showFinished();
@@ -300,21 +316,27 @@ public class Daily_Training extends AppCompatActivity {
 
 
     private void setExerciseInformation(int id) {
-        title.setText(list.get(id).getName());
-        //temp fix
-        detail_gif.setImageResource(Integer.parseInt(list.get(id).getGifUrl()));
-        btnStart.setText("start");
-
-        detail_gif.setVisibility(View.VISIBLE);
-        btnStart.setVisibility(View.VISIBLE);
-        txtTimer.setVisibility(View.VISIBLE);
-
-        linearLayout.setVisibility(View.INVISIBLE);
+        if (!list.isEmpty()) {
+            // set picture and name
+            // temp fix
+            // Load image using Glide on the main thread
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // temp fix
+                    Glide.with(Daily_Training.this)
+                            .load(list.get(id).getGifUrl())
+                            .into(detail_gif);
+                }
+            });
+        } else {
+            Log.e(this.getClass().getSimpleName(), "List is empty");
+        }
     }
     private String formatDate(Date date) {
         return dateFormat.format(date);
     }
-    private void fetchDataFromAPI(String workout) {
+    private void fetchDataFromAPI(String bodyPart) {
         Callback callback = new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -325,12 +347,14 @@ public class Daily_Training extends AppCompatActivity {
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     String responseBody = response.body().string();
+                    Log.d(this.getClass().getSimpleName(), "onResponse: " + responseBody);
                     // Xử lý dữ liệu phản hồi ở đây
                     try {
                         JSONArray jsonArray = new JSONArray(responseBody);
                         for (int i = 0; i < jsonArray.length(); i++) {
                             JSONObject jsonObject = jsonArray.getJSONObject(i);
-                            if(workout.equalsIgnoreCase(jsonObject.getString("bodyPart"))) {
+
+                            if(bodyPart.equalsIgnoreCase(jsonObject.getString("bodyPart"))){
                                 Exercise exercise = new Exercise();
                                 exercise.setId(jsonObject.getInt("id"));
                                 exercise.setName(jsonObject.getString("name"));
@@ -340,7 +364,15 @@ public class Daily_Training extends AppCompatActivity {
                                 exercise.setTarget(jsonObject.getString("target"));
                                 list.add(exercise);
                             }
+
+
                         }
+                        // Perform necessary operations with the populated list here
+                        Log.d(this.getClass().getSimpleName(), "onResponse: " + list.size());
+                        progressBar.setMax(list.size());
+                        setExerciseInformation(ex_id);
+                        detail_gif.setVisibility(View.INVISIBLE);
+                        title.setVisibility(View.INVISIBLE);
 
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
