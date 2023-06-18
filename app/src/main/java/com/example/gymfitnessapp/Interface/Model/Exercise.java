@@ -1,4 +1,4 @@
-package com.example.gymfitnessapp.Model;
+package com.example.gymfitnessapp.Interface.Model;
 
 public class Exercise {
     private int id;

@@ -14,11 +14,12 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
-import com.example.gymfitnessapp.Model.Exercise;
+import com.example.gymfitnessapp.Interface.Model.Exercise;
 import com.example.gymfitnessapp.R;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private Context context;
     private List<Exercise> exerciseList;
     private OnItemClickListener listener;
+    private RequestManager glideRequestManager;
     public RecyclerViewAdapter(Context context, List<Exercise> exerciseList) {
         this.context = context;
         this.exerciseList = exerciseList;
@@ -36,6 +38,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public interface OnItemClickListener {
         void onItemClick(Exercise exercise);
     }
+
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
     }

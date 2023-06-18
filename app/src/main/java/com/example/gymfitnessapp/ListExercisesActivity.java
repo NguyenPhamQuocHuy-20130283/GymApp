@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.gymfitnessapp.API.APIConnector;
 import com.example.gymfitnessapp.Adapter.RecyclerViewAdapter;
-import com.example.gymfitnessapp.Model.Exercise;
+import com.example.gymfitnessapp.Interface.Model.Exercise;
 
 import org.json.JSONArray;
 import org.json.JSONException;

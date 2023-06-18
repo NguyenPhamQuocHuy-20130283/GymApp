@@ -11,9 +11,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
 import com.example.gymfitnessapp.API.APIConnector;
 import com.example.gymfitnessapp.Database.GymDB;
-import com.example.gymfitnessapp.Model.Exercise;
+import com.example.gymfitnessapp.Interface.Model.Exercise;
 import com.example.gymfitnessapp.Utils.Common;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 
@@ -50,6 +51,7 @@ public class Daily_Training extends AppCompatActivity {
     List<Exercise> list = new ArrayList<>();
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
     GymDB gymDB;
+    private RequestManager glideRequestManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +68,7 @@ public class Daily_Training extends AppCompatActivity {
         title = (TextView)findViewById(R.id.title);
 
         gymDB = new GymDB(this);
-
+        glideRequestManager = Glide.with(this);
         //set data
 
         progressBar.setMax(list.size());
@@ -324,7 +326,7 @@ public class Daily_Training extends AppCompatActivity {
                 @Override
                 public void run() {
                     // temp fix
-                    Glide.with(Daily_Training.this)
+                    glideRequestManager
                             .load(list.get(id).getGifUrl())
                             .into(detail_gif);
                 }
